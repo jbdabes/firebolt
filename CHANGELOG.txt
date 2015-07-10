@@ -1,0 +1,28 @@
+-------------------------------------
+1.2.0 (July 8th, 2015)
+-------------------------------------
+* Added private messaging system.
+* Added permissions to use/see the shoutbox.
+* Added an active users display.
+
+-------------------------------------
+1.1.0 (July 7th, 2015)
+-------------------------------------
+* Added Modern Shout style.
+* Added toggle to disable stylizer display.
+* Added the XL shoutbox (accessible by clicking the shoutbox title).
+
+-------------------------------------
+1.0.2 (July 7th, 2015)
+-------------------------------------
+* Fixed a bug within the stylizer that did not allow users to change font/color.
+
+-------------------------------------
+1.0.1 (July 6th, 2015)
+-------------------------------------
+* Fixed a bug with displaying the shoutbox to unregistered members.
+
+-------------------------------------
+1.0.0 (July 6th, 2015)
+-------------------------------------
+* Initial release on vBulletin.org.

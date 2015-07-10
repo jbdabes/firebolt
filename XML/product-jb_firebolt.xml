@@ -1,0 +1,548 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<product productid="jb_firebolt" active="1">
+	<title>JB: Firebolt Shoutbox</title>
+	<description>A shoutbox I will be developing slowly - please feel free to make feature requests on my vBulletin.org thread.</description>
+	<version>1.2.0</version>
+	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=jb_firebolt]]></url>
+	<versioncheckurl><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=jb_firebolt]]></versioncheckurl>
+	<dependencies>
+	</dependencies>
+	<codes>
+		<code version="1.0.0">
+			<installcode><![CDATA[$vbulletin->db->query("
+    CREATE TABLE `" . TABLE_PREFIX . "jb_firebolt_shout`
+    (
+        `id` INT(255) NOT NULL AUTO_INCREMENT ,
+        `userid` INT(255) NOT NULL ,
+        `shout` TEXT NOT NULL ,
+        `shouttime` INT(255) NOT NULL ,
+        PRIMARY KEY (`id`)
+    )
+    ENGINE = MyISAM
+");
+$vbulletin->db->query("
+    CREATE TABLE `" . TABLE_PREFIX . "jb_firebolt_users`
+    (
+        `userid` INT(255) NOT NULL ,
+        `font` VARCHAR(255) NOT NULL ,
+        `color` VARCHAR(255) NOT NULL ,
+        `shout_bold` BOOLEAN NOT NULL DEFAULT FALSE ,
+        `shout_underline` BOOLEAN NOT NULL DEFAULT FALSE ,
+        `shout_italic` BOOLEAN NOT NULL DEFAULT FALSE ,
+        `is_banned` BOOLEAN NOT NULL DEFAULT FALSE ,
+        UNIQUE (`userid`)
+    )
+    ENGINE = MyISAM
+");]]></installcode>
+			<uninstallcode><![CDATA[$vbulletin->db->query("DROP TABLE `" . TABLE_PREFIX . "jb_firebolt_shout`");
+$vbulletin->db->query("DROP TABLE `" . TABLE_PREFIX . "jb_firebolt_users`");]]></uninstallcode>
+		</code>
+		<code version="1.2.0">
+			<installcode><![CDATA[$vbulletin->db->query("ALTER TABLE `" . TABLE_PREFIX . "jb_firebolt_users` ADD `lastactivity` INT(255) NOT NULL ;");
+$vbulletin->db->query("ALTER TABLE `" . TABLE_PREFIX . "jb_firebolt_shout` ADD `pmto` INT(255) NOT NULL DEFAULT '0' ;");
+$vbulletin->db->query("CREATE TABLE `" . TABLE_PREFIX . "jb_firebolt_pmsessions` ( `id` INT(255) NOT NULL AUTO_INCREMENT , `userid` INT(255) NOT NULL , `recipient` INT(255) NOT NULL , `lastactivity` INT(255) NOT NULL , PRIMARY KEY (`id`) ) ENGINE = MyISAM;");]]></installcode>
+			<uninstallcode><![CDATA[$vbulletin->db->query("DROP TABLE `" . TABLE_PREFIX . "jb_firebolt_pmsessions`");]]></uninstallcode>
+		</code>
+	</codes>
+	<templates>
+		<template name="jb_firebolt_activeuser" templatetype="template" date="1436316514" username="JB" version="1.1.1"><![CDATA[<div class="jb_firebolt_activeuser" id="jb_firebolt_activeuser_{vb:raw userid}" onclick="Firebolt.open_pm('{vb:raw userid}', '{vb:raw username}');">
+    <vb:if condition="$userid != '0'"><a href="member.php?u={vb:raw userid}"></vb:if>{vb:raw musername}<vb:if condition="$userid != '0'"></a></vb:if>
+</div>]]></template>
+		<template name="jb_firebolt_activeusers" templatetype="template" date="1436311803" username="JB" version="1.1.1"><![CDATA[<div class="jb_firebolt_activeusers">
+    <div class="jb_firebolt_activeusers_inner"  id="jb_firebolt_activeusers">{vb:raw firebolt_activeusers}</div>
+</div>]]></template>
+		<template name="jb_firebolt_activeusers_header" templatetype="template" date="1436319176" username="JB" version="1.1.1"><![CDATA[<div class="jb_firebolt_activeusers_header" id="jb_firebolt_activeusers_header" onclick="Firebolt.open_pm('0', '');">Active Users</div>]]></template>
+		<template name="jb_firebolt_css" templatetype="template" date="1436321452" username="JB" version="1.1.1"><![CDATA[<style type="text/css">
+    .jb_firebolt_shout_editor
+    {
+        width: <vb:if condition="$vboptions['jb_firebolt_show_stylizer']">70<vb:else />90</vb:if>%;
+        height: 40px;
+        padding: 10px;
+        font-size: 18px;
+        border: 0;
+        float: left;
+        <vb:if condition="$firebolt_xl">border-top: {vb:stylevar formrow_border};</vb:if>
+        border-bottom: {vb:stylevar formrow_border};
+        border-right: {vb:stylevar formrow_border};
+    }
+    .jb_firebolt_editor_button_l
+    {
+        width: <vb:if condition="$vboptions['jb_firebolt_show_stylizer']">6<vb:else />10</vb:if>%;
+        height: 40px;
+        border: 0;
+        float: left;
+        background-color: #ffffff;
+        font-size: 18px;
+        <vb:if condition="$firebolt_xl">border-top: {vb:stylevar formrow_border};</vb:if>
+        border-bottom: {vb:stylevar formrow_border};
+        border-right: {vb:stylevar formrow_border};
+        border-radius: 0;
+        -webkit-appearance: none;
+    }
+    .jb_firebolt_element_first
+    {
+        border-left: {vb:stylevar formrow_border};
+    }
+    .jb_firebolt_element_last
+    {
+        border-right: 0;
+    }
+    .jb_firebolt_editor_button_s
+    {
+        width: 2%;
+        height: 40px;
+        border: 0;
+        float: left;
+        background-color: #ffffff;
+        font-size: 18px;
+        <vb:if condition="$firebolt_xl">border-top: {vb:stylevar formrow_border};</vb:if>
+        border-bottom: {vb:stylevar formrow_border};
+        border-right: {vb:stylevar formrow_border};
+        border-radius: 0;
+        -webkit-appearance: none;
+    }
+    .jb_firebolt_editor_button_selected
+    {
+        background-color: rgb(221, 221, 221);
+    }
+    #jb_firebolt_blockrow_container
+    {
+        border-top: 0;
+        height: <vb:if condition="$firebolt_xl">80%<vb:else />200px</vb:if>;
+        padding: 0 !important;
+        <vb:if condition="$firebolt_xl">border-bottom: {vb:stylevar formrow_border};</vb:if>
+    }
+    #jb_firebolt_shout_frame
+    {
+        width: <vb:if condition="$vboptions['jb_firebolt_activeusers'] != 'disabled'">90%<vb:else />100%</vb:if>;
+        float: left;
+        height: 100%;
+        overflow: auto;
+    }
+    .jb_clear_both
+    {
+        clear: both;
+    }
+    .jb_clear_both_1
+    {
+        clear: both;
+        height: 1px;
+    }
+    .jb_firebolt_informant
+    {
+        background-color: #FFEB90;
+        width: 100%;
+        height: 20px;
+        font-size: 15px;
+        font-weight: bold;
+        margin-top: -1px;
+        display: none;
+        border-bottom: {vb:stylevar formrow_border};
+    }
+    #jb_firebolt_informant
+    {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    .jb_firebolt_shout_modern_self_div
+    {
+        max-width: 80%;
+        padding: 8px;
+        margin-right: 10px;
+        margin-bottom: 3px;
+        float: right;
+        background-color: #4183D7;
+        border-radius: 15px;
+        font-family: Arial, Tahoma, Trebuchet MS !important;
+        color: white !important;
+        text-decoration: none !important;
+        font-weight: none !important;
+        font-style: none !important;
+    }
+    .jb_firebolt_shout_modern_self_div a
+    {
+        color: white !important;
+        text-decoration: underline;
+    }
+    .jb_firebolt_shout_modern_other_div
+    {
+        max-width: 80%;
+        padding: 8px;
+        margin-left: 10px;
+        margin-bottom: 3px;
+        float: left;
+        background-color: #DADFE1;
+        border-radius: 15px;
+        font-family: Arial, Tahoma, Trebuchet MS !important;
+        color: black !important;
+        text-decoration: none !important;
+        font-weight: none !important;
+        font-style: none !important;
+    }
+    .jb_firebolt_shout_modern_other_div a
+    {
+        color: #417394 !important;
+        text-decoration: underline;
+    }
+    .jb_firebolt_shout_modern_username
+    {
+        font-size: 10px;
+        margin-right: 10px;
+        padding-left: 8px;
+        float: left;
+        color: #424242 !important;
+    }
+    .jb_firebolt_activeusers
+    {
+        float: left;
+        width: 10%;
+        height: 100%;
+        overflow-y: auto;
+        overflow-x: visible;
+        box-sizing: border-box;
+        <vb:if condition="$vboptions['jb_firebolt_activeusers'] == 'left'">border-right<vb:elseif condition="$vboptions['jb_firebolt_activeusers'] == 'right'" />border-left</vb:if>: {vb:stylevar formrow_border};
+    }
+    .jb_firebolt_activeusers_inner
+    {
+        width: 100%;
+        min-height: 100%;
+        
+    }
+    .jb_firebolt_activeusers_header
+    {
+        border-bottom: {vb:stylevar formrow_border};
+        padding: 5px;
+        background-color: {vb:stylevar formrow_border.borderColor};
+        color: white;
+        font-weight: bold;
+        text-align: center;
+    }
+    .jb_firebolt_activeuser
+    {
+        border-bottom: {vb:stylevar formrow_border};
+        padding: 5px;
+    }
+    .jb_firebolt_activeuser:hover
+    {
+        background-color: #FFEB90;
+    }
+    <vb:if condition="$firebolt_xl">
+        html {
+            background-color: white !important;
+        }
+        body {
+            margin: 0 !important;
+            min-width: 0 !important;
+        }
+    </vb:if>
+</style>]]></template>
+		<template name="jb_firebolt_editor" templatetype="template" date="1436319261" username="JB" version="1.1.1"><![CDATA[    <form onsubmit="return Firebolt.shout();">
+        <input type="text" autocomplete="off" class="jb_firebolt_shout_editor<vb:if condition="$firebolt_xl"> jb_firebolt_element_first</vb:if>" name="jb_firebolt_shout_editor" id="jb_firebolt_shout_editor" placeholder="Enter your shout..">
+        <vb:if condition="$vboptions['jb_firebolt_show_stylizer']">
+            <input type="button" class="jb_firebolt_editor_button_s<vb:if condition="$usersettings['bold']"> jb_firebolt_editor_button_selected</vb:if>" onclick="Firebolt.change_stylizer('bold');" name="jb_firebolt_button_bold" id="jb_firebolt_button_bold" value="B" style="font-weight: bold;">
+            <input type="button" class="jb_firebolt_editor_button_s<vb:if condition="$usersettings['underline']"> jb_firebolt_editor_button_selected</vb:if>" onclick="Firebolt.change_stylizer('underline');" name="jb_firebolt_button_underline" id="jb_firebolt_button_underline" value="U" style="text-decoration: underline;">
+            <input type="button" class="jb_firebolt_editor_button_s<vb:if condition="$usersettings['italic']"> jb_firebolt_editor_button_selected</vb:if>" onclick="Firebolt.change_stylizer('italic');" name="jb_firebolt_button_italic" id="jb_firebolt_button_italic" value="I" style="font-style: italic;">
+            <select class="jb_firebolt_editor_button_l" id="jb_firebolt_stylizer_font" onchange="Firebolt.change_stylizer('font');">
+                {vb:raw fonts}
+            </select>
+            <select class="jb_firebolt_editor_button_l" id="jb_firebolt_stylizer_color" onchange="Firebolt.change_stylizer('color');">
+                {vb:raw colors}
+            </select>
+            <input type="button" class="jb_firebolt_editor_button_l" name="jb_firebolt_button_smilies" id="jb_firebolt_button_smilies" value="Smilies" onclick="Firebolt.fetch_smilies();">
+        </vb:if>
+        <input type="button" class="jb_firebolt_editor_button_l<vb:if condition="!$firebolt_xl"> jb_firebolt_element_last</vb:if>" name="jb_firebolt_button_send" id="jb_firebolt_button_send" value="Shout" onclick="return Firebolt.shout();">
+    </form>]]></template>
+		<template name="jb_firebolt_frame" templatetype="template" date="1436313209" username="JB" version="1.1.1"><![CDATA[{vb:raw firebolt_css}
+
+<h2 class="blockhead"><center><a href="firebolt.php?do=xl">{vb:raw vboptions.jb_firebolt_title}</a></center></h2>
+<div class="blockbody formcontrols jb_firebolt_frame">
+    {vb:raw firebolt_editor}
+    <div class="jb_clear_both"></div>
+    <div class="jb_firebolt_informant" id="jb_firebolt_informant_frame"><span id="jb_firebolt_informant"></span></div>
+    <div class="blockrow" id="jb_firebolt_blockrow_container">
+        <vb:if condition="$vboptions['jb_firebolt_activeusers'] == 'left'">
+            {vb:raw firebolt_activeusers_frame}
+        </vb:if>
+        <div id="jb_firebolt_shout_frame"></div>
+        <vb:if condition="$vboptions['jb_firebolt_activeusers'] == 'right'">
+            {vb:raw firebolt_activeusers_frame}
+        </vb:if>
+        <vb:if condition="$vboptions['jb_firebolt_activeusers'] != 'disabled'"><div class="jb_clear_both"></div></vb:if>
+    </div>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script type="text/javascript" src="jb/firebolt/clientscript/firebolt.js"></script>
+<script type="text/javascript">
+    Firebolt = new Firebolt;
+    Firebolt.init(
+        3, // time in seconds to refresh
+        20 // shouts to grab
+    );
+</script>]]></template>
+		<template name="jb_firebolt_shout" templatetype="template" date="1436231082" username="JB" version="1.0.3"><![CDATA[[{vb:raw sdate} {vb:raw stime}] {vb:raw username} : {vb:raw message}<br />]]></template>
+		<template name="jb_firebolt_shout_modern" templatetype="template" date="1436232634" username="JB" version="1.0.3"><![CDATA[<vb:if condition="$bbuserinfo['userid'] != $user['userid']"><div class="jb_firebolt_shout_modern_username">{vb:raw username}</div><div class="jb_clear_both"></div></vb:if>
+<div title="{vb:raw sdate} {vb:raw stime}" class="jb_firebolt_shout_modern_<vb:if condition="$bbuserinfo['userid'] == $user['userid']">self<vb:else />other</vb:if>_div">
+    {vb:raw message}
+</div>
+<div class="jb_clear_both"></div>]]></template>
+		<template name="jb_firebolt_stylizer_option_color" templatetype="template" date="1436229145" username="JB" version="1.0.2"><![CDATA[<option value='{vb:raw color}' style='color: {vb:raw color};'{vb:raw selected}>{vb:raw color}</option>]]></template>
+		<template name="jb_firebolt_stylizer_option_font" templatetype="template" date="1436229013" username="JB" version="1.0.2"><![CDATA[<option value='{vb:raw font}' style='font-family: {vb:raw font};'{vb:raw selected}>{vb:raw font}</option>]]></template>
+		<template name="jb_firebolt_xl_frame" templatetype="template" date="1436321239" username="JB" version="1.1.1"><![CDATA[<head>
+    {vb:raw firebolt_css}
+    <title>{vb:raw vboptions.jb_firebolt_title} - {vb:raw vboptions.bbtitle}</title>
+    {vb:raw headinclude}
+    {vb:raw headinclude_bottom}
+</head>
+<div class="jb_firebolt_frame">
+{vb:raw firebolt_editor}
+<div class="jb_clear_both"></div>
+<div class="jb_firebolt_informant" id="jb_firebolt_informant_frame"><span id="jb_firebolt_informant"></span></div>
+<div id="jb_firebolt_blockrow_container">
+    <vb:if condition="$vboptions['jb_firebolt_activeusers'] == 'left'">
+        {vb:raw firebolt_activeusers_frame}
+    </vb:if>
+    <div id="jb_firebolt_shout_frame"></div>
+    <vb:if condition="$vboptions['jb_firebolt_activeusers'] == 'right'">
+        {vb:raw firebolt_activeusers_frame}
+    </vb:if>
+    <vb:if condition="$vboptions['jb_firebolt_activeusers'] != 'disabled'"><div class="jb_clear_both"></div></vb:if>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script type="text/javascript" src="jb/firebolt/clientscript/firebolt.js"></script>
+<script type="text/javascript">
+    Firebolt = new Firebolt;
+    Firebolt.init(
+        3, // time in seconds to refresh
+        40 // shouts to grab
+    );
+</script>]]></template>
+	</templates>
+	<stylevardfns>
+	</stylevardfns>
+	<stylevars>
+	</stylevars>
+	<plugins>
+		<plugin active="1" executionorder="5">
+			<title>Save admin settings correctly</title>
+			<hookname>admin_options_processing</hookname>
+			<phpcode><![CDATA[// save usergroups
+if (is_array($settings['jb_firebolt_canadmin']))
+{
+	$settings['jb_firebolt_canadmin'] = serialize($settings['jb_firebolt_canadmin']);
+}
+
+if (is_array($settings['jb_firebolt_canmod']))
+{
+	$settings['jb_firebolt_canmod'] = serialize($settings['jb_firebolt_canmod']);
+}
+
+if (is_array($settings['jb_firebolt_canuse']))
+{
+	$settings['jb_firebolt_canuse'] = serialize($settings['jb_firebolt_canuse']);
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Insert Shoutbox on FORUMHOME</title>
+			<hookname>forumhome_start</hookname>
+			<phpcode><![CDATA[if($vbulletin->options['jb_firebolt_enabled'])
+{
+    require_once(DIR . '/jb/firebolt/includes/class_firebolt.php');
+    $firebolt = new Firebolt;
+    
+    if($firebolt->can_use())
+    {
+        $firebolt->fetch_editor_settings();
+        $fonts = $firebolt->stylizer_fonts;
+        $colors = $firebolt->stylizer_colors;
+        
+        $templater = vB_Template::create('jb_firebolt_editor');
+        $templater->register('usersettings', $firebolt->usersettings);
+        $templater->register('fonts', $fonts);
+        $templater->register('colors', $colors);
+        $templater->register('firebolt_xl', false);
+        $editor = $templater->render();
+        
+        $templater = vB_Template::create('jb_firebolt_css');
+        $templater->register('firebolt_xl', false);
+        $css = $templater->render();
+        
+        if($vbulletin->options['jb_firebolt_activeusers'] != 'disabled')
+        {
+            $active_users = $firebolt->fetch_active_users();
+            $templater = vB_Template::create('jb_firebolt_activeusers');
+            $templater->register('firebolt_activeusers', $active_users);
+            $activeusers = $templater->render();
+        }
+        
+        $templater = vB_Template::create('jb_firebolt_frame');
+        $templater->register('firebolt_editor', $editor);
+        $templater->register('firebolt_css', $css);
+        if($vbulletin->options['jb_firebolt_activeusers'] != 'disabled') { $templater->register('firebolt_activeusers_frame', $activeusers); }
+        $template_hook['forumhome_above_forums'] .= $templater->render();
+    }
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Group templates</title>
+			<hookname>template_groups</hookname>
+			<phpcode><![CDATA[$only['jb_firebolt_'] = 'JB: Firebolt';]]></phpcode>
+		</plugin>
+	</plugins>
+	<phrases>
+		<phrasetype name="vBulletin Settings" fieldname="vbsettings">
+			<phrase name="setting_jb_firebolt_activeusers_desc" date="1436306110" username="JB" version="1.1.1"><![CDATA[Enable the Active Users area, and choose where to display it.]]></phrase>
+			<phrase name="setting_jb_firebolt_activeusers_title" date="1436306110" username="JB" version="1.1.1"><![CDATA[Active Users: Display]]></phrase>
+			<phrase name="setting_jb_firebolt_allowed_colors_desc" date="1436303236" username="JB" version="1.1.1"><![CDATA[Define what colors you'd like your users to be able to use, one per line.]]></phrase>
+			<phrase name="setting_jb_firebolt_allowed_colors_title" date="1436303236" username="JB" version="1.1.1"><![CDATA[Stylizer: Color Selector]]></phrase>
+			<phrase name="setting_jb_firebolt_allowed_fonts_desc" date="1436303233" username="JB" version="1.1.1"><![CDATA[Define what fonts you'd like your users to be able to use, one per line.]]></phrase>
+			<phrase name="setting_jb_firebolt_allowed_fonts_title" date="1436303233" username="JB" version="1.1.1"><![CDATA[Stylizer: Font Selector]]></phrase>
+			<phrase name="setting_jb_firebolt_canadmin_desc" date="1436303226" username="JB" version="1.1.1"><![CDATA[Set which usergroups can access the administrator commands. The administrator commands are as follows:
+<br /><br />
+<ul>
+<li><b>/prune</b></li>
+</ul>]]></phrase>
+			<phrase name="setting_jb_firebolt_canadmin_title" date="1436303226" username="JB" version="1.1.1"><![CDATA[Permissions: Administrator]]></phrase>
+			<phrase name="setting_jb_firebolt_canmod_desc" date="1436303228" username="JB" version="1.1.1"><![CDATA[Set which usergroups can access the moderator commands. The moderator commands are as follows:
+<br /><br />
+<ul>
+<li><b>/prune username/userid</b></li>
+<li><b>/ban username/userid</b></li>
+<li><b>/unban username/userid</b></li>
+<li><b>/notice</b></li>
+<li><b>/removenotice</b></li>
+</ul>]]></phrase>
+			<phrase name="setting_jb_firebolt_canmod_title" date="1436303228" username="JB" version="1.1.1"><![CDATA[Permissions: Moderator]]></phrase>
+			<phrase name="setting_jb_firebolt_canuse_desc" date="1436303558" username="JB" version="1.1.1"><![CDATA[Set which usergroups can use the shoutbox.]]></phrase>
+			<phrase name="setting_jb_firebolt_canuse_title" date="1436303558" username="JB" version="1.1.1"><![CDATA[Permissions: Can Use (Normal)]]></phrase>
+			<phrase name="setting_jb_firebolt_enabled_desc" date="1436303216" username="JB" version="1.1.1"><![CDATA[You can enable or disable Firebolt from running using this toggle.]]></phrase>
+			<phrase name="setting_jb_firebolt_enabled_title" date="1436303216" username="JB" version="1.1.1"><![CDATA[Firebolt Enabled]]></phrase>
+			<phrase name="setting_jb_firebolt_new_shout_layout_desc" date="1436303221" username="JB" version="1.1.1"><![CDATA[Would you like to use the new shout layout?
+<br /><br />
+<b>Note that this will disable the stylizer options (bold, italic, underline, font, color) however it will not remove your user's preferences nor will it stop them from changing them using the stylizer in case you decide to revert this option.</b>]]></phrase>
+			<phrase name="setting_jb_firebolt_new_shout_layout_title" date="1436303221" username="JB" version="1.1.1"><![CDATA[Use New Shout Layout]]></phrase>
+			<phrase name="setting_jb_firebolt_notice_desc" date="1436303223" username="JB" version="1.1.1"><![CDATA[Set a shoutbox notice, which will be viewable above all shouts.]]></phrase>
+			<phrase name="setting_jb_firebolt_notice_title" date="1436303223" username="JB" version="1.1.1"><![CDATA[Shoutbox Notice]]></phrase>
+			<phrase name="setting_jb_firebolt_show_stylizer_desc" date="1436303230" username="JB" version="1.1.1"><![CDATA[Enable/disable viewing of the Stylizer.]]></phrase>
+			<phrase name="setting_jb_firebolt_show_stylizer_title" date="1436303230" username="JB" version="1.1.1"><![CDATA[Stylizer: Enabled]]></phrase>
+			<phrase name="setting_jb_firebolt_title_desc" date="1436303219" username="JB" version="1.1.1"><![CDATA[Change the title of your shoutbox.]]></phrase>
+			<phrase name="setting_jb_firebolt_title_title" date="1436303219" username="JB" version="1.1.1"><![CDATA[Shoutbox Title]]></phrase>
+			<phrase name="settinggroup_jb_firebolt" date="1436142898" username="JB" version="1.0.0"><![CDATA[JB: Firebolt Settings]]></phrase>
+		</phrasetype>
+	</phrases>
+	<options>
+		<settinggroup name="jb_firebolt" displayorder="65535">
+			<setting varname="jb_firebolt_enabled" displayorder="10">
+				<datatype>boolean</datatype>
+				<optioncode>yesno</optioncode>
+				<defaultvalue>1</defaultvalue>
+			</setting>
+			<setting varname="jb_firebolt_title" displayorder="20">
+				<datatype>free</datatype>
+				<defaultvalue>Firebolt Shoutbox</defaultvalue>
+			</setting>
+			<setting varname="jb_firebolt_new_shout_layout" displayorder="30">
+				<datatype>boolean</datatype>
+				<optioncode>yesno</optioncode>
+				<defaultvalue>0</defaultvalue>
+			</setting>
+			<setting varname="jb_firebolt_notice" displayorder="40">
+				<datatype>free</datatype>
+				<optioncode>textarea</optioncode>
+			</setting>
+			<setting varname="jb_firebolt_canadmin" displayorder="100">
+				<datatype>free</datatype>
+				<optioncode><![CDATA[" . eval('$options = "";
+if (@unserialize($setting[value]) !== false)
+{
+	$setting[value] = unserialize($setting[value]);
+	$setting[value] = implode(",",$setting[value]);
+}
+foreach($vbulletin->usergroupcache AS $usergroupid => $usergroup)
+{
+	$options .= "\\t\\t<label for=\\"setting[$setting[varname]]$usergroupid\\" title=\\"usergroupid: $usergroupid\\" style=\\"float: left; width: 250px;\\"><input type=\\"checkbox\\" tabindex=\\"1\\" name=\\"setting[$setting[varname]]"."[]\\" id=\\"setting[$setting[varname]][$usergroupid]\\" value=\\"$usergroupid\\"" . iif(strpos(",$setting[value],", ",$usergroupid,") !== false, \' checked="checked"\') . iif($vbulletin->debug, " title=\\"name=&quot;setting[$setting[varname]]&quot;\\"") . " />$usergroup[title]</label>\\n";
+}
+return "<div class=\\"smallfont\\">\\n$options\\t</div>";') . "<input type=\"hidden\" name=\"setting[$setting[varname]][]\" value=\"-1\" />]]></optioncode>
+				<defaultvalue><![CDATA[a:2:{i:0;s:1:"6";i:1;s:2:"-1";}]]></defaultvalue>
+			</setting>
+			<setting varname="jb_firebolt_canmod" displayorder="110">
+				<datatype>free</datatype>
+				<optioncode><![CDATA[" . eval('$options = "";
+if (@unserialize($setting[value]) !== false)
+{
+	$setting[value] = unserialize($setting[value]);
+	$setting[value] = implode(",",$setting[value]);
+}
+foreach($vbulletin->usergroupcache AS $usergroupid => $usergroup)
+{
+	$options .= "\\t\\t<label for=\\"setting[$setting[varname]]$usergroupid\\" title=\\"usergroupid: $usergroupid\\" style=\\"float: left; width: 250px;\\"><input type=\\"checkbox\\" tabindex=\\"1\\" name=\\"setting[$setting[varname]]"."[]\\" id=\\"setting[$setting[varname]][$usergroupid]\\" value=\\"$usergroupid\\"" . iif(strpos(",$setting[value],", ",$usergroupid,") !== false, \' checked="checked"\') . iif($vbulletin->debug, " title=\\"name=&quot;setting[$setting[varname]]&quot;\\"") . " />$usergroup[title]</label>\\n";
+}
+return "<div class=\\"smallfont\\">\\n$options\\t</div>";') . "<input type=\"hidden\" name=\"setting[$setting[varname]][]\" value=\"-1\" />]]></optioncode>
+				<defaultvalue><![CDATA[a:4:{i:0;s:1:"6";i:1;s:1:"7";i:2;s:1:"5";i:3;s:2:"-1";}]]></defaultvalue>
+			</setting>
+			<setting varname="jb_firebolt_canuse" displayorder="130">
+				<datatype>free</datatype>
+				<optioncode><![CDATA[" . eval('$options = "";
+if (@unserialize($setting[value]) !== false)
+{
+	$setting[value] = unserialize($setting[value]);
+	$setting[value] = implode(",",$setting[value]);
+}
+foreach($vbulletin->usergroupcache AS $usergroupid => $usergroup)
+{
+	$options .= "\\t\\t<label for=\\"setting[$setting[varname]]$usergroupid\\" title=\\"usergroupid: $usergroupid\\" style=\\"float: left; width: 250px;\\"><input type=\\"checkbox\\" tabindex=\\"1\\" name=\\"setting[$setting[varname]]"."[]\\" id=\\"setting[$setting[varname]][$usergroupid]\\" value=\\"$usergroupid\\"" . iif(strpos(",$setting[value],", ",$usergroupid,") !== false, \' checked="checked"\') . iif($vbulletin->debug, " title=\\"name=&quot;setting[$setting[varname]]&quot;\\"") . " />$usergroup[title]</label>\\n";
+}
+return "<div class=\\"smallfont\\">\\n$options\\t</div>";') . "<input type=\"hidden\" name=\"setting[$setting[varname]][]\" value=\"-1\" />]]></optioncode>
+				<defaultvalue><![CDATA[a:5:{i:0;s:1:"6";i:1;s:1:"7";i:2;s:1:"2";i:3;s:1:"5";i:4;s:2:"-1";}]]></defaultvalue>
+			</setting>
+			<setting varname="jb_firebolt_show_stylizer" displayorder="200">
+				<datatype>boolean</datatype>
+				<optioncode>yesno</optioncode>
+				<defaultvalue>1</defaultvalue>
+			</setting>
+			<setting varname="jb_firebolt_allowed_fonts" displayorder="210">
+				<datatype>free</datatype>
+				<optioncode>textarea</optioncode>
+				<defaultvalue>Arial
+Century Gothic
+Comic Sans MS
+Lucida Console
+Microsoft Sans Serif
+Tahoma
+Times New Roman
+Trebuchet MS
+Verdana</defaultvalue>
+			</setting>
+			<setting varname="jb_firebolt_allowed_colors" displayorder="220">
+				<datatype>free</datatype>
+				<optioncode>textarea</optioncode>
+				<defaultvalue>Black
+Red
+Green
+Blue
+Cyan
+Yellow
+Magenta
+Violet</defaultvalue>
+			</setting>
+			<setting varname="jb_firebolt_activeusers" displayorder="300">
+				<datatype>free</datatype>
+				<optioncode>select:piped
+disabled|Disabled
+left|Left of shout frame
+right|Right of shout frame</optioncode>
+				<defaultvalue>left</defaultvalue>
+			</setting>
+		</settinggroup>
+	</options>
+	<helptopics>
+	</helptopics>
+	<cronentries>
+	</cronentries>
+	<faqentries>
+	</faqentries>
+	<navigation>
+	</navigation>
+</product>
