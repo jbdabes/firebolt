@@ -3,7 +3,7 @@
 <product productid="jb_firebolt" active="1">
 	<title>JB: Firebolt Shoutbox</title>
 	<description>A shoutbox I will be developing slowly - please feel free to make feature requests on my vBulletin.org thread.</description>
-	<version>1.2.0</version>
+	<version>1.3.0</version>
 	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=jb_firebolt]]></url>
 	<versioncheckurl><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=jb_firebolt]]></versioncheckurl>
 	<dependencies>
@@ -53,7 +53,7 @@ $vbulletin->db->query("CREATE TABLE `" . TABLE_PREFIX . "jb_firebolt_pmsessions`
     <div class="jb_firebolt_activeusers_inner"  id="jb_firebolt_activeusers">{vb:raw firebolt_activeusers}</div>
 </div>]]></template>
 		<template name="jb_firebolt_activeusers_header" templatetype="template" date="1436319176" username="JB" version="1.1.1"><![CDATA[<div class="jb_firebolt_activeusers_header" id="jb_firebolt_activeusers_header" onclick="Firebolt.open_pm('0', '');">Active Users</div>]]></template>
-		<template name="jb_firebolt_css" templatetype="template" date="1436321452" username="JB" version="1.1.1"><![CDATA[<style type="text/css">
+		<template name="jb_firebolt_css" templatetype="template" date="1436541520" username="JB" version="1.3.0"><![CDATA[<style type="text/css">
     .jb_firebolt_shout_editor
     {
         width: <vb:if condition="$vboptions['jb_firebolt_show_stylizer']">70<vb:else />90</vb:if>%;
@@ -236,6 +236,31 @@ $vbulletin->db->query("CREATE TABLE `" . TABLE_PREFIX . "jb_firebolt_pmsessions`
             min-width: 0 !important;
         }
     </vb:if>
+    .jb_firebolt_minified_div
+    {
+        bottom: 0;
+        left: 0;
+        position: fixed;
+        z-index: 1000000;
+        width: 100%;
+        background-color: grey;
+        background-image: url('jb/firebolt/images/minified_bar_bg.png');
+        background-repeat: repeat-x;
+        height: 30px;
+        font-family: Tahoma;
+        font-size: 14px;
+    }
+    .jb_firebolt_minified_element
+    {
+        padding: 7px;
+        float: right;
+        border: 1px solid grey;
+        margin-left: 5px;
+        margin-right: 5px;
+        min-width: 120px;
+        text-align: center;
+        font-weight: bold;
+    }
 </style>]]></template>
 		<template name="jb_firebolt_editor" templatetype="template" date="1436319261" username="JB" version="1.1.1"><![CDATA[    <form onsubmit="return Firebolt.shout();">
         <input type="text" autocomplete="off" class="jb_firebolt_shout_editor<vb:if condition="$firebolt_xl"> jb_firebolt_element_first</vb:if>" name="jb_firebolt_shout_editor" id="jb_firebolt_shout_editor" placeholder="Enter your shout..">
@@ -253,7 +278,7 @@ $vbulletin->db->query("CREATE TABLE `" . TABLE_PREFIX . "jb_firebolt_pmsessions`
         </vb:if>
         <input type="button" class="jb_firebolt_editor_button_l<vb:if condition="!$firebolt_xl"> jb_firebolt_element_last</vb:if>" name="jb_firebolt_button_send" id="jb_firebolt_button_send" value="Shout" onclick="return Firebolt.shout();">
     </form>]]></template>
-		<template name="jb_firebolt_frame" templatetype="template" date="1436313209" username="JB" version="1.1.1"><![CDATA[{vb:raw firebolt_css}
+		<template name="jb_firebolt_frame" templatetype="template" date="1436539961" username="JB" version="1.3.0"><![CDATA[{vb:raw firebolt_css}
 
 <h2 class="blockhead"><center><a href="firebolt.php?do=xl">{vb:raw vboptions.jb_firebolt_title}</a></center></h2>
 <div class="blockbody formcontrols jb_firebolt_frame">
@@ -280,7 +305,14 @@ $vbulletin->db->query("CREATE TABLE `" . TABLE_PREFIX . "jb_firebolt_pmsessions`
         3, // time in seconds to refresh
         20 // shouts to grab
     );
-</script>]]></template>
+</script>
+
+{vb:raw firebolt_minified}]]></template>
+		<template name="jb_firebolt_minified_frame" templatetype="template" date="1436572512" username="JB" version="1.3.0"><![CDATA[<div class="jb_firebolt_minified_div">
+    <div class="jb_firebolt_minified_element" onclick="Firebolt.show_minified_activeusers();">
+        Active Users
+    </div>
+</div>]]></template>
 		<template name="jb_firebolt_shout" templatetype="template" date="1436231082" username="JB" version="1.0.3"><![CDATA[[{vb:raw sdate} {vb:raw stime}] {vb:raw username} : {vb:raw message}<br />]]></template>
 		<template name="jb_firebolt_shout_modern" templatetype="template" date="1436232634" username="JB" version="1.0.3"><![CDATA[<vb:if condition="$bbuserinfo['userid'] != $user['userid']"><div class="jb_firebolt_shout_modern_username">{vb:raw username}</div><div class="jb_clear_both"></div></vb:if>
 <div title="{vb:raw sdate} {vb:raw stime}" class="jb_firebolt_shout_modern_<vb:if condition="$bbuserinfo['userid'] == $user['userid']">self<vb:else />other</vb:if>_div">
@@ -377,10 +409,17 @@ if (is_array($settings['jb_firebolt_canuse']))
             $activeusers = $templater->render();
         }
         
+        if($vbulletin->options['jb_firebolt_minified'])
+        {
+            $templater = vB_Template::create('jb_firebolt_minified_frame');
+            $minified = $templater->render();
+        }
+        
         $templater = vB_Template::create('jb_firebolt_frame');
         $templater->register('firebolt_editor', $editor);
         $templater->register('firebolt_css', $css);
         if($vbulletin->options['jb_firebolt_activeusers'] != 'disabled') { $templater->register('firebolt_activeusers_frame', $activeusers); }
+        if($vbulletin->options['jb_firebolt_minified']) { $templater->register('firebolt_minified', $minified); }
         $template_hook['forumhome_above_forums'] .= $templater->render();
     }
 }]]></phpcode>
@@ -419,6 +458,8 @@ if (is_array($settings['jb_firebolt_canuse']))
 			<phrase name="setting_jb_firebolt_canuse_title" date="1436303558" username="JB" version="1.1.1"><![CDATA[Permissions: Can Use (Normal)]]></phrase>
 			<phrase name="setting_jb_firebolt_enabled_desc" date="1436303216" username="JB" version="1.1.1"><![CDATA[You can enable or disable Firebolt from running using this toggle.]]></phrase>
 			<phrase name="setting_jb_firebolt_enabled_title" date="1436303216" username="JB" version="1.1.1"><![CDATA[Firebolt Enabled]]></phrase>
+			<phrase name="setting_jb_firebolt_minified_desc" date="1436539402" username="JB" version="1.3.0"><![CDATA[Enable the minified version of the shoutbox.]]></phrase>
+			<phrase name="setting_jb_firebolt_minified_title" date="1436539402" username="JB" version="1.3.0"><![CDATA[Minified: Enabled]]></phrase>
 			<phrase name="setting_jb_firebolt_new_shout_layout_desc" date="1436303221" username="JB" version="1.1.1"><![CDATA[Would you like to use the new shout layout?
 <br /><br />
 <b>Note that this will disable the stylizer options (bold, italic, underline, font, color) however it will not remove your user's preferences nor will it stop them from changing them using the stylizer in case you decide to revert this option.</b>]]></phrase>
@@ -534,6 +575,11 @@ disabled|Disabled
 left|Left of shout frame
 right|Right of shout frame</optioncode>
 				<defaultvalue>left</defaultvalue>
+			</setting>
+			<setting varname="jb_firebolt_minified" displayorder="400">
+				<datatype>boolean</datatype>
+				<optioncode>yesno</optioncode>
+				<defaultvalue>0</defaultvalue>
 			</setting>
 		</settinggroup>
 	</options>
